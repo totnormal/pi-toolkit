@@ -1,19 +1,32 @@
 # pi-toolkit
 
-Custom patches, models, extensions, and tools for [pi-coding-agent](https://github.com/earendil-works/pi).
+Your personal customization layer for [pi-coding-agent](https://github.com/earendil-works/pi).
 
-Persists across `bun update` / `npm update` because the launcher re-applies
-patches on every session start.
+This repo holds everything that makes pi yours: patches, custom models,
+extensions, skills, launcher configs, and other overrides. Because it lives
+outside `node_modules`, a `bun update` or `npm update` won't wipe your changes.
 
-## What's here
+## How it works
 
-| Path | Purpose |
-|---|---|
-| `patches/` | Idempotent shell scripts that patch `node_modules` on launch |
-| `setup.sh` | Installs/updates patches and registers them in your pi launcher |
-| `extensions/` | (future) custom pi extensions |
-| `models.json` | (future) model overrides for your providers |
-| `skills/` | (future) custom skills |
+`setup.sh` installs your customizations into `~/.pi/agent/`:
+- **`patches/`** → `~/.pi/agent/patches/` (auto-applied on every pi launch)
+- **`models.json`** → `~/.pi/agent/models.json` (model overrides)
+- **`skills/`** → `~/.pi/agent/skills/` (custom skills)
+- **`extensions/`** → `~/.pi/agent/extensions/` (custom extensions)
+- **`launcher.sh`** → appends to `~/.pi/bin/pi` (env vars, PATH tweaks)
+
+Your pi launcher (`~/.pi/bin/pi`) runs every script in `~/.pi/agent/patches/`
+on startup, so patches persist and self-heal after package updates.
+
+## Quick start
+
+```bash
+git clone https://github.com/totnormal/pi-toolkit.git ~/.pi/agent/toolkit
+cd ~/.pi/agent/toolkit
+./setup.sh
+```
+
+Re-run `./setup.sh` after pulling updates to refresh.
 
 ## Current patches
 
@@ -22,25 +35,26 @@ patches on every session start.
   models and aligns built-in models with what OpenRouter actually charges.
   ([upstream PR](https://github.com/earendil-works/pi/pull/5950))
 
-## Setup
+## Repo structure
 
-```bash
-git clone https://github.com/totnormal/pi-toolkit.git ~/.pi/agent/toolkit
-cd ~/.pi/agent/toolkit
-./setup.sh
+```
+pi-toolkit/
+├── setup.sh              # installer — copies everything into ~/.pi/agent/
+├── patches/              # idempotent node_modules patch scripts
+│   └── fix-openrouter-cost.sh
+├── models.json           # (future) provider + model overrides
+├── skills/               # (future) custom pi skills
+├── extensions/           # (future) custom pi extensions
+├── launcher.sh           # (future) extra launcher config
+├── .env.example          # (future) API keys / env vars template
+└── README.md
 ```
 
-Re-run `./setup.sh` after pulling updates.
+## Adding a new patch
 
-## How it works
-
-Your pi launcher (`~/.pi/bin/pi`) runs every script in `~/.pi/agent/patches/`
-on startup. Each script:
-1. Checks a marker file — skips if already applied
-2. Patches the target `node_modules` dist file with `sed`
-3. Creates the marker
-
-This means npm/bun updates don't wipe your fixes; they get re-applied next launch.
+1. Create `patches/my-fix.sh`
+2. Make it idempotent: use a marker file in `~/.pi/agent/`
+3. Run `./setup.sh` to register it in the launcher
 
 ## License
 
